@@ -2,14 +2,14 @@ const express = require('express')
 const app = express()
 const PORT = process.env.PORT || 4000;
 
+require('./startup')(app);
 
-app.get('/',(req, res) => {
-    res.status(200).send({
-        msg: 'Everything is working fine',
-        host: req.host
-    })
-})
+const connectDb = require('./config/v1/database')
+connectDb();
 
-app.listen(PORT, () => {
+
+app.listen(PORT, async () => {
+    await require('./startup/routes')(app);
+
     console.log(`Server is listening to the port http://localhost:${PORT}`)
 })
