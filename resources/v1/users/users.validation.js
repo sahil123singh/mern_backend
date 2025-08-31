@@ -95,7 +95,34 @@ module.exports = class UsersValidation {
         if (errors) {
             return response.badRequest('Invalid request', res, errors);
         }
-        
+
+        next()
+    }
+
+    async forgotPassword(req, res, next) {
+        console.log('UserValidation@forgotPassword');
+
+        let schema = {
+            email: Joi.string().required()
+        }
+
+        let errors = await _DataHelper.joiValidation(req.body, schema);
+        if (errors) {
+            return response.badRequest('Invalid request', res, errors);
+        }
+
+        // check email is exist or not
+        let user = await _Users.getByEmail(req.body.email)
+        if (!user) {
+            return response.notFound('User does not exist with this email', res, false);
+        }
+        req.user = user;
+        next()
+    }
+
+    async userProfile(req, res, next) {
+        console.log('UserValidation@userProfile')
+
         next()
     }
 

@@ -113,4 +113,36 @@ module.exports = class UserController {
         return response.success('Profile updated successfully', res, false)
     }
 
+    async forgotPassword(req, res) {
+        console.log('UserController@forgotPassword');
+
+        let data = _.pick(req.body, ['email']);
+        let otp = '1234'
+
+        let updatedUserObj = await Users.updateOne(req.user._id, { otp: otp })
+
+        if (!updatedUserObj) {
+            return response.badRequest('Unable to send OTP', res);
+        }
+
+        // TODO ->send otp via email to the user
+        return response.success("Forgot password OTP send successfully", res, { email: data.email });
+
+    }
+
+    async userProfile(req, res) {
+        console.log('UserController@userProfile')
+
+        let user = req.user;
+
+        let userDetails = await Users.getOne(user._id)
+        if (!userDetails) {
+            return response.success('Unable to find user', res, false)
+        }
+
+        userDetails = await Users.getFormattedData(userDetails);
+
+        return response.success('User details find successfully', res, userDetails)
+    }
+
 }
