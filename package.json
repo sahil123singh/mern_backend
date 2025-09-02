@@ -29,6 +29,7 @@
     "lodash": "^4.17.21",
     "mongoose": "^8.18.0",
     "multer": "^2.0.2",
-    "nodemailer": "^7.0.5"
+    "nodemailer": "^7.0.5",
+    "uuid": "^11.1.0"
   }
 }

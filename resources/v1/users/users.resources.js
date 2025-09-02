@@ -35,7 +35,7 @@ module.exports = class UserResources {
     }
 
     async updateOne(id, data) {
-        console.log('UserResources@updateOne', id, data)
+        console.log('UserResources@updateOne')
         if ((!id || id === '') || (!data || data === '')) {
             throw new Error('data is required');
         }

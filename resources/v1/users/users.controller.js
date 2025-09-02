@@ -64,9 +64,10 @@ module.exports = class UserController {
             return response.conflict('Invalid OTP', res, null);
         }
         let updatedUserObj = await Users.updateOne(user._id, { isVerified: true })
+        updatedUserObj = await Users.getOne(user._id)
 
         let result = await Users.getFormattedData(updatedUserObj);
-        return response.success("OTP verified", res, result);
+        return response.success("OTP verified", res, { email: result.email });
 
     }
 
@@ -130,6 +131,21 @@ module.exports = class UserController {
 
     }
 
+    async resetPassword(req, res) {
+        console.log('UserController@resetPassword')
+
+        let data = _.pick(req.body, ['password', 'confirmPassword', 'email'])
+
+        let hashedPassword = await _DataHelper.hashPassword(data.password)
+        let updateUser = await Users.updateOne(req.user._id, { password: hashedPassword })
+
+        if (!updateUser) {
+            return response.badRequest('Unable reset your password.', res, null);
+        }
+        return response.success("password changed successfully.", res, true)
+
+    }
+
     async userProfile(req, res) {
         console.log('UserController@userProfile')
 
@@ -143,6 +159,20 @@ module.exports = class UserController {
         userDetails = await Users.getFormattedData(userDetails);
 
         return response.success('User details find successfully', res, userDetails)
+    }
+
+    async uploadFile(req, res) {
+        console.log('UserController@uploadFile')
+
+        if (req.file == undefined) {
+            return response.badRequest('invalid request data. Please add file to request', res);
+        }
+
+        let fileUrl = {
+            fileUrl: `${process.env.API_URL}` + "/" + `${req.file.path}`
+        }
+        console.log('fileurl========>>', fileUrl)
+        return response.success("File uploaded successfully", res, fileUrl)
     }
 
 }

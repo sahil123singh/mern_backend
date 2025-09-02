@@ -120,9 +120,41 @@ module.exports = class UsersValidation {
         next()
     }
 
+    async resetPassword(req, res, next) {
+        console.log('UserValidation@resetPassword')
+
+        let schema = {
+            password: Joi.string().required(),
+            confirmPassword: Joi.string().required(),
+            email: Joi.string().required()
+        }
+
+        let errors = await _DataHelper.joiValidation(req.body, schema);
+        if (errors) {
+            return response.badRequest('Invalid request', res, errors);
+        }
+
+        if (req.body.password !== req.body.confirmPassword) {
+            return response.badRequest('Confirm password must be same as password', res, false)
+        }
+
+        let user = await _Users.getByEmail(req.body.email)
+        if (!user) {
+            return response.notFound('User not exists', res, false);
+        }
+        req.user = user;
+
+        next()
+    }
+
     async userProfile(req, res, next) {
         console.log('UserValidation@userProfile')
 
+        next()
+    }
+
+    async uploadFile(req, res, next) {
+        console.log('UserValidation@uploadFile')
         next()
     }
 
