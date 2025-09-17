@@ -26,6 +26,7 @@ module.exports = (app) => {
         console.log('development mode active....');
 
         app.use(cors({ origin: CONFIG.cors_whitelist }))
+        app.use(cors({origin: 'http://10.242.213.8:3000'}))
         app.use(bodyParser.json({ limit: '10mb' }));
         app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
     }

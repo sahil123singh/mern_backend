@@ -1,5 +1,5 @@
 const User = require('./users.model')
-
+const mongoose = require('mongoose')
 module.exports = class UserResources {
 
     async createOne(data) {
@@ -35,11 +35,16 @@ module.exports = class UserResources {
     }
 
     async updateOne(id, data) {
-        console.log('UserResources@updateOne')
+        console.log('UserResources@updateOne', id)
         if ((!id || id === '') || (!data || data === '')) {
             throw new Error('data is required');
         }
-        let result = await User.updateOne({ _id: id }, data)
+        if (typeof id === 'string' && mongoose.Types.ObjectId.isValid(id)) {
+            id = new mongoose.Types.ObjectId(id)
+        }
+        console.log('aaaaaaaaaaaaaaaaaaaa============', id)
+
+        let result = await User.updateOne({ _id: id }, data, { new: true })
 
         if (!result) {
             return false;
@@ -60,6 +65,62 @@ module.exports = class UserResources {
         return result
     }
 
+    async getOneById(id) {
+        console.log('UserResource@getOneById', id);
+
+        let result = await User.aggregate([
+            {
+                $match: { _id: new mongoose.Types.ObjectId(id) }
+            },
+            {
+                $lookup: {
+                    from: 'posts',
+                    localField: '_id',
+                    foreignField: 'userId',
+                    as: 'postDetails'
+                }
+            },
+            // {
+            //     $unwind: "$postDetails"
+            // },
+            {
+                $addFields: {
+                    likeCount: { $size: { $ifNull: ["$postDetails.likedBy", []] } } // optional: safe count
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    userInfo: 1,
+                    followers: 1,
+                    following: 1,
+                    postDetails: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                }
+            }
+        ]);
+
+        if (!result[0]) {
+            return false
+        }
+        return result[0]
+    }
+
+    async getByColumnAndValue(column = '', value = '') {
+        console.log('UserResource@getByColumnAndValue')
+        if ((!column || column === '') || (!value || value === '')) {
+            throw new Error('value is required');
+        }
+
+        let result = await User.findOne({ [column]: value })
+        if (!result) {
+            return false;
+        }
+
+        return result;
+
+    }
 
     async getFormattedData(userObj = null) {
         console.log('UsersResource@getFormattedData');
@@ -77,6 +138,7 @@ module.exports = class UserResources {
             role: userObj.role,
             createdBy: userObj.createdBy,
             isVerified: userObj.isVerified,
+            socketId: userObj.socketId,
             // isActive: userObj.isActive,
             createdAt: userObj.createdAt,
             updatedAt: userObj.updatedAt,

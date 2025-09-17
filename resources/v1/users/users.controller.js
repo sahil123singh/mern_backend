@@ -175,4 +175,99 @@ module.exports = class UserController {
         return response.success("File uploaded successfully", res, fileUrl)
     }
 
+
+    async getOneById(req, res) {
+        console.log('UserController@getOneById')
+
+        let userId
+        if (req.params.id) {
+            userId = req.params.id;
+        }else {
+            userId = req.user.id
+        }
+        // req.params.id ? userId = req.params.id : userId = req.user._id
+        let userDetails = await Users.getOneById(userId);
+
+        if (!userDetails) {
+            return response.success('Unable to find user details', res, false)
+        }
+
+        if (userDetails?.postDetails.length) {
+
+            for (let post of userDetails?.postDetails) {
+                post.likeCount = post?.likedBy.length
+                let checkLike = post?.likedBy?.some((p) => {
+                    return p.userId.toString() === req.user.id
+                })
+                checkLike ? post.likedByMe = true : post.likedByMe = false
+                let checkFav = post?.addTofav?.some((p) => {
+                    return p.userId.toString() === req.user.id
+                })
+                checkFav ? post.favorited = true : post.favorited = false
+            }
+        }
+        return response.success('User details found successfully', res, userDetails);
+
+    }
+
+    async userFollowUnfollow(req, res) {
+        console.log('UserController@userFollowUnfollow')
+
+        let data = _.pick(req.body, ['userId', 'type', 'userDetails'])
+
+        const currentUserId = req.user._id.toString();
+        const targetUserId = data.userId;
+        if (currentUserId === targetUserId) {
+            return response.success('Cannot follow/unfollow yourself', res, false);
+        }
+
+        let dataToUpdate;
+
+        // check current user following list
+        if (req.user?.following && req.user.following.length) {
+            var isFollowing = req.user.following.includes(targetUserId);
+        }
+        let updateCurrentUser, updateTargetUser;
+
+
+        //  todo check others user following list(userDetails)
+
+        if (data.type === 'follow') {
+            if (isFollowing) {
+                return response.success('Already following this user', res, false);
+
+            } else {
+                updateCurrentUser = { $push: { following: targetUserId } };
+                updateTargetUser = { $push: { followers: currentUserId } };
+            }
+        } else if (data.type === 'unfollow') {
+            if (!isFollowing) {
+                return response.success('Already unfollowed', res, false);
+            }
+            updateCurrentUser = { $pull: { following: targetUserId } };
+            updateTargetUser = { $pull: { followers: currentUserId } };
+
+        } else {
+            return response.success('Invalid type provided', res, false);
+        }
+        // Update current user's following list
+        const currentUserUpdateResult = await Users.updateOne(currentUserId, updateCurrentUser);
+        // Update target user's followers list
+        const targetUserUpdateResult = await Users.updateOne(targetUserId, updateTargetUser);
+        if (!currentUserUpdateResult || !targetUserUpdateResult) {
+            return response.error('Unable to perform follow/unfollow operation', res);
+        }
+        return response.success('Operation successful', res, true);
+
+    }
+
+    async getFollowerFollowingList(req, res) {
+        console.log('UserController@getFollowerFollowingList')
+
+        let user = await Users.getOneById(req.user._id);
+        if (!user) {
+            return response.success("Unable to find data", res, false)
+        }
+        return response.success('Successfull', res, user)
+    }
 }

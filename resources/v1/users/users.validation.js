@@ -74,7 +74,7 @@ module.exports = class UsersValidation {
         if (!isPasswordValid) {
             return response.badRequest("Invalid login credentials2", res, false);
         }
-        if (user.isVerified != 'true') {
+        if (user.isVerified != true) {
             return response.success("Not verified yet", res, false);
         }
 
@@ -158,4 +158,43 @@ module.exports = class UsersValidation {
         next()
     }
 
+    async getByUserId(req, res, next) {
+        console.log('UserValidation@getByUserId')
+
+        let schema = {
+            id: Joi.string().required()
+        }
+        let errors = await _DataHelper.joiValidation(req.params, schema);
+        if (errors) {
+            return response.badRequest('Invalid request', res, errors);
+        }
+
+        next()
+    }
+
+    async userFollowUnfollow(req, res, next) {
+        console.log('UserValidation@userFollowUnfollow');
+        let schema = {
+            userId: Joi.string().required(),
+            type: Joi.string().valid('follow', 'unfollow').required()
+        }
+
+        let errors = await _DataHelper.joiValidation(req.body, schema);
+        if (errors) {
+            return response.badRequest('Invalid request', res, errors);
+        }
+
+        let user = await _Users.getOneById(req.body.userId)
+        if (!user) {
+            return response.notFound('User not exists', res, false);
+        }
+        req.body.userDetails = user
+        next()
+    }
+
+    async getFollowerFollowingList(req, res, next) {
+        console.log('UserValidation@getFollowerFollowingList');
+
+        next()
+    }
 }

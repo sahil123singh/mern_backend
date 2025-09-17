@@ -17,6 +17,12 @@ routes.post('/forgot-password', validation.forgotPassword, User.forgotPassword)
 routes.post('/reset-password', validation.resetPassword, User.resetPassword)
 routes.post('/uploads', validation.uploadFile, upload.uploadFile().single('file'), User.uploadFile)
 routes.put('/', [auth.auth, validation.updateProfile], User.updateProfile)
+// routes.put('/')
 routes.get('/profile', [auth.auth, validation.userProfile], User.userProfile)
+// follow unfollow
+
+routes.post('/follow/', [auth.auth, validation.userFollowUnfollow], User.userFollowUnfollow)
+routes.get('/follow-list', [auth.auth, validation.getFollowerFollowingList], User.getFollowerFollowingList)
+routes.get('/:id', [auth.auth, validation.getByUserId], User.getOneById)
 
 module.exports = routes
