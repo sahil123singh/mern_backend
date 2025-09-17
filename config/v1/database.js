@@ -1,9 +1,12 @@
+require('dotenv').config();
+
 const mongoose = require('mongoose');
 
 const connectDb = async () => {
     try {
-
-        await mongoose.connect('mongodb://localhost:27017/mern_db',
+        console.log('url======>>', process.env.MONGO_URL)
+// mongodb://localhost:27017/mern_db
+        await mongoose.connect(process.env.MONGO_URL,
             {
                 // useNewUrlParser: true,
                 // useUnifiedTopology: true
