@@ -24,5 +24,5 @@ socketFunc(io);
 server.listen(PORT, '0.0.0.0', async () => {
     await require('./startup/routes')(app);
 
-    console.log(`Server is listening to the port ${PORT}`)
+    console.log(`Server is listening to the port http://localhost:${PORT}`)
 })

@@ -24,6 +24,7 @@ module.exports = async function (app) {
     });
 
     app.get('/', function (req, res, next) {
+        console.log('every thing is working fine......')
         return res.status(200).send({
             msg: 'everything is working fine.',
             host: req.get('host'),

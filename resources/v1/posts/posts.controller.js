@@ -60,86 +60,63 @@ module.exports = class PostController {
     async getAllPostByUserId(req, res) {
         console.log('PostController@getAllPostByUserId')
 
-        let userId = req.user._id;
-
-        let posts = await Post.getAllByUserId(userId);
+        const userId = req.user._id;
+        const posts = await Post.getAllByUserId(userId);
+        
         if (!posts.length) {
-            return response.success("No data found", res, posts)
-
-        }
-        for (let post of posts) {
-            let checkLike = post?.likedBy?.some((p) => {
-                return p.userId.toString() === req.user.id
-            })
-            checkLike ? post.likedByMe = true : post.likedByMe = false
+            return response.success("No data found", res, posts);
         }
 
-        for (let post of posts) {
-            let checkFav = post?.addTofav?.some((p) => {
-                return p.userId.toString() === req.user.id
-            })
-            checkFav ? post.favorited = true : post.favorited = false
-        }
-        return response.success("Data found successfully", res, posts)
+        // Process all posts in a single loop
+        posts.forEach(post => {
+            post.likedByMe = post?.likedBy?.some(p => p.userId.toString() === req.user.id) || false;
+            post.favorited = post?.addTofav?.some(p => p.userId.toString() === req.user.id) || false;
+        });
 
+        return response.success("Data found successfully", res, posts);
     }
 
     async likePost(req, res) {
         console.log('PostController@likePost');
 
-        let data = _.pick(req.body, ['postId', 'like'])
+        const { postId, like } = _.pick(req.body, ['postId', 'like']);
+        const checkPost = req.body.post;
+        const userId = req.user._id;
 
-        let checkPost = req.body.post;
-        let msg;
-        let dataToUpdate;
-
-        if (data.like === 'like') {
-            msg = 'Post Liked'
-            const likedByMe = checkPost?.likedBy?.some((like) => {
-                return like?.userId?.toString() === req.user.id
-
-            })
-            // if already liked then dislike
-            if (likedByMe) {
-                msg = 'Post disliked!';
-
-                dataToUpdate = {
-                    $pull: {
-                        likedBy: { userId: req.user._id },
-                    }
-                }
-
-            } else {
-                dataToUpdate = {
-                    $push: {
-                        likedBy: { userId: req.user._id },
-                    }
-                }
-            }
-        } else if (data.like === 'fav') {
-            // for add to fav post
-            const checkFav = checkPost?.addTofav?.some((fav) => {
-                return fav?.userId?.toString() === req.user.id
-
-            })
-            if (checkFav) {
-                msg = 'Removed from favourite!';
-                dataToUpdate = {
-                    $pull: {
-                        addTofav: { userId: req.user._id }
-                    }
-                }
-            } else {
-                msg = 'Added to favourite!';
-                dataToUpdate = {
-                    $push: {
-                        addTofav: { userId: req.user._id }
-                    }
-                }
-            }
+        if (!checkPost) {
+            return response.badRequest('Post not found', res, false);
         }
-        let postLike = await Post.updateOne({ _id: checkPost._id }, dataToUpdate)
-        return response.success(msg, res, postLike)
+
+        const isLikeAction = like === 'like';
+        const isFavAction = like === 'fav';
+        
+        if (!isLikeAction && !isFavAction) {
+            return response.badRequest('Invalid action', res, false);
+        }
+
+        const field = isLikeAction ? 'likedBy' : 'addTofav';
+        const isAlreadyActioned = checkPost?.[field]?.some(item => 
+            item?.userId?.toString() === req.user.id
+        );
+
+        const operation = isAlreadyActioned ? '$pull' : '$push';
+        const messages = {
+            like: { add: 'Post Liked', remove: 'Post disliked!' },
+            fav: { add: 'Added to favourite!', remove: 'Removed from favourite!' }
+        };
+
+        const dataToUpdate = {
+            [operation]: {
+                [field]: { userId }
+            }
+        };
+
+        const msg = isAlreadyActioned 
+            ? messages[like].remove 
+            : messages[like].add;
+
+        const postLike = await Post.updateOne({ _id: checkPost._id }, dataToUpdate);
+        return response.success(msg, res, postLike);
     }
 
     async getById(req, res) {
